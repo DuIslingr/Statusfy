@@ -14,6 +14,7 @@ static NSString * const SFYPlayerDockIconPreferenceKey = @"YES";
 
 @interface SFYAppDelegate ()
 
+@property (nonatomic, strong) NSMenuItem *playPauseMenuItem;
 @property (nonatomic, strong) NSMenuItem *playerStateMenuItem;
 @property (nonatomic, strong) NSMenuItem *dockIconMenuItem;
 @property (nonatomic, strong) NSStatusItem *statusItem;
@@ -32,10 +33,13 @@ static NSString * const SFYPlayerDockIconPreferenceKey = @"YES";
     
     NSMenu *menu = [[NSMenu alloc] initWithTitle:@""];
     
+    self.playPauseMenuItem = [[NSMenuItem alloc] initWithTitle:[self determinePlayPauseMenuItemTitle] action:@selector(togglePlayState) keyEquivalent:@""];
+
     self.playerStateMenuItem = [[NSMenuItem alloc] initWithTitle:[self determinePlayerStateMenuItemTitle] action:@selector(togglePlayerStateVisibility) keyEquivalent:@""];
     
     self.dockIconMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Hide Dock Icon", nil) action:@selector(toggleDockIconVisibility) keyEquivalent:@""];
     
+    [menu addItem:self.playPauseMenuItem];
     [menu addItem:self.playerStateMenuItem];
     [menu addItem:self.dockIconMenuItem];
     [menu addItemWithTitle:NSLocalizedString(@"Quit", nil) action:@selector(quit) keyEquivalent:@"q"];
@@ -94,10 +98,21 @@ static NSString * const SFYPlayerDockIconPreferenceKey = @"YES";
     [[NSUserDefaults standardUserDefaults] setBool:visible forKey:SFYPlayerStatePreferenceKey];
 }
 
+- (void)togglePlayState
+{
+    [self executeAppleScript:@"playpause"];
+    self.playPauseMenuItem.title = [self determinePlayPauseMenuItemTitle];
+}
+
 - (void)togglePlayerStateVisibility
 {
     [self setPlayerStateVisibility:![self getPlayerStateVisibility]];
     self.playerStateMenuItem.title = [self determinePlayerStateMenuItemTitle];
+}
+
+- (NSString *)determinePlayPauseMenuItemTitle
+{
+    return [[self determinePlayerState] isEqualToString:@"►"] ? NSLocalizedString(@"❚❚ Pause ", nil) : NSLocalizedString(@"► Play", nil);
 }
 
 - (NSString *)determinePlayerStateMenuItemTitle
