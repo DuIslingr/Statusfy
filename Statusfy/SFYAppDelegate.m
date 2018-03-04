@@ -57,8 +57,8 @@ static NSString * const SFYPlayerDockIconPreferenceKey = @"YES";
         NSString *titleText = [NSString stringWithFormat:@"%@ - %@", trackName, artistName];
         
         if ([self getPlayerStateVisibility]) {
-            NSString *playerState = [self determinePlayerStateText];
-            titleText = [NSString stringWithFormat:@"%@ (%@)", titleText, playerState];
+            NSString *playerState = [self determinePlayerState];
+            titleText = [NSString stringWithFormat:@"%@ %@", playerState, titleText];
         }
         
         self.statusItem.image = nil;
@@ -105,19 +105,19 @@ static NSString * const SFYPlayerDockIconPreferenceKey = @"YES";
     return [self getPlayerStateVisibility] ? NSLocalizedString(@"Hide Player State", nil) : NSLocalizedString(@"Show Player State", nil);
 }
 
-- (NSString *)determinePlayerStateText
+- (NSString *)determinePlayerState
 {
     NSString *playerStateText = nil;
     NSString *playerStateConstant = [[self executeAppleScript:@"get player state"] stringValue];
     
     if ([playerStateConstant isEqualToString:@"kPSP"]) {
-        playerStateText = NSLocalizedString(@"Playing", nil);
+        playerStateText = NSLocalizedString(@"►", nil);
     }
     else if ([playerStateConstant isEqualToString:@"kPSp"]) {
-        playerStateText = NSLocalizedString(@"Paused", nil);
+        playerStateText = NSLocalizedString(@"❚❚", nil);
     }
     else {
-        playerStateText = NSLocalizedString(@"Stopped", nil);
+        playerStateText = NSLocalizedString(@"◼", nil);
     }
     
     return playerStateText;
