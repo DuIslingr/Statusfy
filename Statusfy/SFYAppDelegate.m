@@ -41,6 +41,8 @@ static int const titleMaxLength = 40;
 
     self.trackInfoMenuItem = [[NSMenuItem alloc] initWithTitle:@"" action:nil keyEquivalent:@"" ];
 
+    NSMenuItem *copySpotifyLinkMenuItem = [[NSMenuItem alloc] initWithTitle:@"Copy Spotify link" action:@selector(copySpotifyLinkToClipboard) keyEquivalent:@"" ];
+
     self.playerStateMenuItem = [[NSMenuItem alloc] initWithTitle:[self determinePlayerStateMenuItemTitle] action:@selector(togglePlayerStateVisibility) keyEquivalent:@""];
     
     self.dockIconMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Hide Dock Icon", nil) action:@selector(toggleDockIconVisibility) keyEquivalent:@""];
@@ -48,6 +50,7 @@ static int const titleMaxLength = 40;
     [self.menu addItem:self.trackInfoMenuItem];
     [self.menu addItem:[NSMenuItem separatorItem]];
     [self.menu addItem:self.playPauseMenuItem];
+    [self.menu addItem:copySpotifyLinkMenuItem];
     [self.menu addItem:[NSMenuItem separatorItem]];
     [self.menu addItem:self.playerStateMenuItem];
     [self.menu addItem:self.dockIconMenuItem];
@@ -172,6 +175,13 @@ static int const titleMaxLength = 40;
 - (NSString *)determinePlayerStateMenuItemTitle
 {
     return [self getPlayerStateVisibility] ? NSLocalizedString(@"Hide Player State", nil) : NSLocalizedString(@"Show Player State", nil);
+}
+
+- (void)copySpotifyLinkToClipboard
+{
+    NSString *spotifyId = [[[self executeAppleScript:@"get spotify url of current track"] stringValue] substringFromIndex:14];
+    [[NSPasteboard generalPasteboard] clearContents];
+    [[NSPasteboard generalPasteboard] setString:[NSString stringWithFormat:@"https://open.spotify.com/track/%@", spotifyId] forType:NSPasteboardTypeString];
 }
 
 - (NSString *)determinePlayerState
