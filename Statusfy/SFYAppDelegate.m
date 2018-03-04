@@ -11,13 +11,16 @@
 
 static NSString * const SFYPlayerStatePreferenceKey = @"ShowPlayerState";
 static NSString * const SFYPlayerDockIconPreferenceKey = @"YES";
+static int const titleMaxLength = 40;
 
 @interface SFYAppDelegate ()
 
 @property (nonatomic, strong) NSMenuItem *playPauseMenuItem;
+@property (nonatomic, strong) NSMenuItem *trackInfoMenuItem;
 @property (nonatomic, strong) NSMenuItem *playerStateMenuItem;
 @property (nonatomic, strong) NSMenuItem *dockIconMenuItem;
 @property (nonatomic, strong) NSStatusItem *statusItem;
+@property NSString *stateAndTrack;
 
 @end
 
@@ -35,13 +38,19 @@ static NSString * const SFYPlayerDockIconPreferenceKey = @"YES";
     
     self.playPauseMenuItem = [[NSMenuItem alloc] initWithTitle:[self determinePlayPauseMenuItemTitle] action:@selector(togglePlayState) keyEquivalent:@""];
 
+    self.trackInfoMenuItem = [[NSMenuItem alloc] initWithTitle:@"" action:NULL keyEquivalent:@"" ];
+
     self.playerStateMenuItem = [[NSMenuItem alloc] initWithTitle:[self determinePlayerStateMenuItemTitle] action:@selector(togglePlayerStateVisibility) keyEquivalent:@""];
     
     self.dockIconMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Hide Dock Icon", nil) action:@selector(toggleDockIconVisibility) keyEquivalent:@""];
     
+    [menu addItem:self.trackInfoMenuItem];
+    [menu addItem:[NSMenuItem separatorItem]];
     [menu addItem:self.playPauseMenuItem];
+    [menu addItem:[NSMenuItem separatorItem]];
     [menu addItem:self.playerStateMenuItem];
     [menu addItem:self.dockIconMenuItem];
+    [menu addItem:[NSMenuItem separatorItem]];
     [menu addItemWithTitle:NSLocalizedString(@"Quit", nil) action:@selector(quit) keyEquivalent:@"q"];
 
     [self.statusItem setMenu:menu];
@@ -56,24 +65,45 @@ static NSString * const SFYPlayerDockIconPreferenceKey = @"YES";
 {
     NSString *trackName = [[self executeAppleScript:@"get name of current track"] stringValue];
     NSString *artistName = [[self executeAppleScript:@"get artist of current track"] stringValue];
-    
+    NSString *titleText = [NSString stringWithFormat:@"%@ – %@", trackName, artistName];
+    NSString *playerState = [self determinePlayerState];
+
+    NSString *stateAndTrack = [NSString stringWithFormat:@"%@%@%@", playerState, trackName, artistName];
+
     if (trackName && artistName) {
-        NSString *titleText = [NSString stringWithFormat:@"%@ - %@", trackName, artistName];
+        if (![self.stateAndTrack isEqualToString:stateAndTrack]) {
+            self.stateAndTrack = stateAndTrack;
+            [self setTrackInfoMenuItem:artistName :trackName];
+        } else {
+            return;
+        }
+
+        if (titleText.length > titleMaxLength) {
+            titleText = [[titleText substringToIndex:titleMaxLength] stringByAppendingString:@"…"];
+        }
         
         if ([self getPlayerStateVisibility]) {
-            NSString *playerState = [self determinePlayerState];
             titleText = [NSString stringWithFormat:@"%@ %@", playerState, titleText];
         }
         
         self.statusItem.image = nil;
         self.statusItem.title = titleText;
-    }
-    else {
+    } else {
         NSImage *image = [NSImage imageNamed:@"status_icon"];
         [image setTemplate:true];
         self.statusItem.image = image;
         self.statusItem.title = nil;
     }
+}
+
+#pragma mark - Setting title text
+
+- (void)setTrackInfoMenuItem:(NSString *)artistName :(NSString *)trackName
+{
+    NSString *album = [[self executeAppleScript:@"get album of current track"] stringValue];
+    NSString *formatString = [NSString stringWithFormat:@"Track\t%@\nArtist\t%@\nAlbum\t%@", trackName, artistName, album];
+
+    self.trackInfoMenuItem.attributedTitle = [[NSAttributedString alloc] initWithString:formatString];
 }
 
 #pragma mark - Executing AppleScript
@@ -96,6 +126,7 @@ static NSString * const SFYPlayerDockIconPreferenceKey = @"YES";
 - (void)setPlayerStateVisibility:(BOOL)visible
 {
     [[NSUserDefaults standardUserDefaults] setBool:visible forKey:SFYPlayerStatePreferenceKey];
+    self.stateAndTrack = nil; // Force repaint
 }
 
 - (void)togglePlayState
