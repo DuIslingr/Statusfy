@@ -15,6 +15,7 @@ static int const titleMaxLength = 40;
 
 @interface SFYAppDelegate ()
 
+@property (nonatomic, strong) NSMenu *menu;
 @property (nonatomic, strong) NSMenuItem *playPauseMenuItem;
 @property (nonatomic, strong) NSMenuItem *trackInfoMenuItem;
 @property (nonatomic, strong) NSMenuItem *playerStateMenuItem;
@@ -34,26 +35,26 @@ static int const titleMaxLength = 40;
     self.statusItem = [[NSStatusBar systemStatusBar] statusItemWithLength:NSVariableStatusItemLength];
     self.statusItem.highlightMode = YES;
     
-    NSMenu *menu = [[NSMenu alloc] initWithTitle:@""];
+    self.menu = [[NSMenu alloc] initWithTitle:@""];
     
     self.playPauseMenuItem = [[NSMenuItem alloc] initWithTitle:[self determinePlayPauseMenuItemTitle] action:@selector(togglePlayState) keyEquivalent:@""];
 
-    self.trackInfoMenuItem = [[NSMenuItem alloc] initWithTitle:@"" action:NULL keyEquivalent:@"" ];
+    self.trackInfoMenuItem = [[NSMenuItem alloc] initWithTitle:@"" action:nil keyEquivalent:@"" ];
 
     self.playerStateMenuItem = [[NSMenuItem alloc] initWithTitle:[self determinePlayerStateMenuItemTitle] action:@selector(togglePlayerStateVisibility) keyEquivalent:@""];
     
     self.dockIconMenuItem = [[NSMenuItem alloc] initWithTitle:NSLocalizedString(@"Hide Dock Icon", nil) action:@selector(toggleDockIconVisibility) keyEquivalent:@""];
     
-    [menu addItem:self.trackInfoMenuItem];
-    [menu addItem:[NSMenuItem separatorItem]];
-    [menu addItem:self.playPauseMenuItem];
-    [menu addItem:[NSMenuItem separatorItem]];
-    [menu addItem:self.playerStateMenuItem];
-    [menu addItem:self.dockIconMenuItem];
-    [menu addItem:[NSMenuItem separatorItem]];
-    [menu addItemWithTitle:NSLocalizedString(@"Quit", nil) action:@selector(quit) keyEquivalent:@"q"];
+    [self.menu addItem:self.trackInfoMenuItem];
+    [self.menu addItem:[NSMenuItem separatorItem]];
+    [self.menu addItem:self.playPauseMenuItem];
+    [self.menu addItem:[NSMenuItem separatorItem]];
+    [self.menu addItem:self.playerStateMenuItem];
+    [self.menu addItem:self.dockIconMenuItem];
+    [self.menu addItem:[NSMenuItem separatorItem]];
+    [self.menu addItemWithTitle:NSLocalizedString(@"Quit", nil) action:@selector(quit) keyEquivalent:@"q"];
 
-    [self.statusItem setMenu:menu];
+    [self.statusItem setMenu:self.menu];
     
     [self setStatusItemTitle];
     [NSTimer scheduledTimerWithTimeInterval:1 target:self selector:@selector(setStatusItemTitle) userInfo:nil repeats:YES];
@@ -74,6 +75,7 @@ static int const titleMaxLength = 40;
         if (![self.stateAndTrack isEqualToString:stateAndTrack]) {
             self.stateAndTrack = stateAndTrack;
             [self setTrackInfoMenuItem:artistName :trackName];
+            [self setPlayPauseMenuItemTitle];
         } else {
             return;
         }
@@ -86,6 +88,10 @@ static int const titleMaxLength = 40;
             titleText = [NSString stringWithFormat:@"%@ %@", playerState, titleText];
         }
         
+        if (self.statusItem.menu != self.menu) {
+            [self.statusItem setMenu:self.menu];
+        }
+
         self.statusItem.image = nil;
         self.statusItem.title = titleText;
     } else {
@@ -93,7 +99,19 @@ static int const titleMaxLength = 40;
         [image setTemplate:true];
         self.statusItem.image = image;
         self.statusItem.title = nil;
+        [self showDisabledMenu];
     }
+}
+
+- (void)showDisabledMenu
+{
+    NSMenu *menu = [[NSMenu alloc] initWithTitle:@""];
+
+    [menu addItemWithTitle:NSLocalizedString(@"Spotify not running", nil) action:nil keyEquivalent:@""];
+    [menu addItem:[NSMenuItem separatorItem]];
+    [menu addItemWithTitle:NSLocalizedString(@"Quit", nil) action:@selector(quit) keyEquivalent:@"q"];
+
+    [self.statusItem setMenu:menu];
 }
 
 #pragma mark - Setting title text
@@ -132,6 +150,11 @@ static int const titleMaxLength = 40;
 - (void)togglePlayState
 {
     [self executeAppleScript:@"playpause"];
+    [self setPlayPauseMenuItemTitle];
+}
+
+- (void)setPlayPauseMenuItemTitle
+{
     self.playPauseMenuItem.title = [self determinePlayPauseMenuItemTitle];
 }
 
