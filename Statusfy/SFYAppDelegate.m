@@ -50,11 +50,19 @@ static NSString * const SFYPlayerDockIconPreferenceKey = @"YES";
 
 - (void)setStatusItemTitle
 {
-    NSString *trackName = [[self executeAppleScript:@"get name of current track"] stringValue];
+    NSString *trackName = [[self executeAppleScript:@"get name of the current track"] stringValue];
     NSString *artistName = [[self executeAppleScript:@"get artist of current track"] stringValue];
     
+    NSLog(@"trackName");
+    NSLog(@"%@", trackName);
+    NSLog(@"\n artistName");
+    NSLog(@"%@", artistName);
+    
+    NSString *track = [self fetchTrack:@"spotify:track:3ViTZxW9satrTEMRu1GCLV"];
+    NSLog(@"%@", track);
+    
     if (trackName && artistName) {
-        NSString *titleText = [NSString stringWithFormat:@"%@ - %@", trackName, artistName];
+        /*NSString *titleText = [NSString stringWithFormat:@"%@ - %@", trackName, artistName];
         
         if ([self getPlayerStateVisibility]) {
             NSString *playerState = [self determinePlayerStateText];
@@ -62,13 +70,13 @@ static NSString * const SFYPlayerDockIconPreferenceKey = @"YES";
         }
         
         self.statusItem.image = nil;
-        self.statusItem.title = titleText;
+        self.statusItem.title = titleText;*/
     }
     else {
-        NSImage *image = [NSImage imageNamed:@"status_icon"];
+        /*NSImage *image = [NSImage imageNamed:@"status_icon"];
         [image setTemplate:true];
         self.statusItem.image = image;
-        self.statusItem.title = nil;
+        self.statusItem.title = nil;*/
     }
 }
 
@@ -156,6 +164,45 @@ static NSString * const SFYPlayerDockIconPreferenceKey = @"YES";
 - (NSString *)determineDockIconMenuItemTitle
 {
     return [self getDockIconVisibility] ? NSLocalizedString(@"Hide Dock Icon", nil) : NSLocalizedString(@"Show Dock Icon", nil);
+}
+
+#pragma mark - Fetch trackname if not available
+
+- (NSString *)fetchTrack:(NSString *)trackId {
+    
+    if(trackId) {
+        
+        NSString *bodyData = @"grant_type=client_credentials";
+        
+        // Forming string with credentials 'myusername:mypassword'
+        NSString *authStr = @"7ff186e2aa5f4562a8e6daaa672cf936:98594590076b48f0affa418dd146c763";
+        // Getting data from it
+        NSData *authData = [authStr dataUsingEncoding:NSASCIIStringEncoding];
+        // Encoding data with base64 and converting back to NSString
+        NSString* authStrData = [[NSString alloc] initWithData:[authData base64EncodedDataWithOptions:NSDataBase64EncodingEndLineWithLineFeed] encoding:NSASCIIStringEncoding];
+        // Forming Basic Authorization string Header
+        NSString *authValue = [NSString stringWithFormat:@"Basic %@", authStrData];
+        
+        NSMutableURLRequest *request = [[[NSMutableURLRequest alloc] init] autorelease];
+        [request setURL:[NSURL URLWithString:@"https://accounts.spotify.com/api/token"]];
+        [request setHTTPMethod:@"POST"];
+        [request setValue:@"application/x-www-form-urlencoded" forHTTPHeaderField:@"Content-Type"];
+        [request setHTTPBody:[NSData dataWithBytes:[bodyData UTF8String] length:strlen([bodyData UTF8String])]];
+        
+        // Assigning it to request
+        [request setValue:authValue forHTTPHeaderField:@"Authorization"];
+        
+        // Create url connection and fire request
+        NSData *response = [NSURLConnection sendSynchronousRequest:request returningResponse:nil error:nil];
+        
+        NSLog(@"Response: %@",[[NSString alloc] initWithData:response encoding:NSUTF8StringEncoding]);
+        
+        //NSLog(@"%@authToken?", conn);
+        return @"@!!!!";
+        
+    } else {
+        return @"@????";
+    }
 }
 
 #pragma mark - Quit
